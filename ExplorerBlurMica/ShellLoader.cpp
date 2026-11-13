@@ -10,6 +10,9 @@
 
 long g_cDllRef = 0;
 
+//Defined in dllmain.cpp: true once the API hooks have been installed
+extern bool m_isInitHook;
+
 /*如果您修改了代码 请使用VS的GUID工具生成新的GUID！*/
 const std::wstring CLSID_SHELL_BHO_STR = L"{B44BD3C8-E597-4E08-AE43-246CE24698E7}";
 const CLSID CLSID_SHELL_BHO = { 0xb44bd3c8, 0xe597, 0x4e08, { 0xae, 0x43, 0x24, 0x6c, 0xe2, 0x46, 0x98, 0xe7 } };
@@ -60,7 +63,17 @@ STDMETHODIMP CIDispatch::Invoke(DISPID dispIdMember, REFIID riid, LCID lcid, WOR
 		break;
 	case DISPID_DOCUMENTCOMPLETE:
 	{
-		std::wstring path = (wchar_t*)pDispParams->rgvarg->pvarVal->bstrVal;
+		//DocumentComplete(IDispatch* pDisp, VARIANT* URL): the arguments arrive in
+		//reverse order, so rgvarg[0] is the URL. It is not a string for every folder.
+		if (pDispParams->cArgs < 1 || !pDispParams->rgvarg)
+			break;
+
+		const VARIANT& url = pDispParams->rgvarg[0];
+		if (url.vt != (VT_VARIANT | VT_BYREF) || !url.pvarVal
+			|| url.pvarVal->vt != VT_BSTR || !url.pvarVal->bstrVal)
+			break;
+
+		std::wstring path = url.pvarVal->bstrVal;
 		if (path != m_lastpath)
 		{
 			m_lastpath = path;
@@ -130,23 +143,43 @@ ULONG __stdcall CObjectWithSite::Release()
 STDMETHODIMP CObjectWithSite::SetSite(IUnknown* pUnkSite)
 {
 	ReleaseRes();
+
+	//SetSite(NULL) is how the host tells the object to let go of the site
+	if (!pUnkSite)
+		return S_OK;
+
 	HRESULT hr = pUnkSite->QueryInterface(IID_IWebBrowser2, (void**)&m_web);
-	if (FAILED(hr))
-		ReleaseRes();
+	if (FAILED(hr) || !m_web)
+	{
+		m_web = nullptr;
+		return E_FAIL;
+	}
 
 	IConnectionPointContainer* cpoint = nullptr;
 
 	hr = m_web->QueryInterface(IID_IConnectionPointContainer, (void**)&cpoint);
-	if (FAILED(hr)) return E_FAIL;
+	if (FAILED(hr) || !cpoint) return E_FAIL;
 
 	hr = cpoint->FindConnectionPoint(DIID_DWebBrowserEvents2, &m_cpoint);
-	if (FAILED(hr))
+	cpoint->Release();
+	if (FAILED(hr) || !m_cpoint)
 	{
-		cpoint->Release();
+		m_cpoint = nullptr;
 		return E_FAIL;
 	}
 
-	m_cpoint->Advise((IUnknown*)new CIDispatch(), &m_cookie);
+	//Keep our own reference while advising, so the sink is destroyed if Advise fails
+	CIDispatch* sink = new CIDispatch();
+	sink->AddRef();
+	HRESULT hrAdvise = m_cpoint->Advise(sink, &m_cookie);
+	sink->Release();
+	if (FAILED(hrAdvise))
+	{
+		//No browser events, but there is nothing to Unadvise later either
+		m_cookie = 0;
+		m_cpoint->Release();
+		m_cpoint = nullptr;
+	}
 
 	return hr;
 }
@@ -161,6 +194,7 @@ void CObjectWithSite::ReleaseRes()
 	}
 	m_web = nullptr;
 	m_cpoint = nullptr;
+	m_cookie = 0;
 }
 
 #pragma endregion
@@ -181,14 +215,13 @@ STDMETHODIMP ClassFactory::QueryInterface(REFIID riid, void** ppv)
 ULONG __stdcall ClassFactory::AddRef()
 {
 	InterlockedIncrement(&g_cDllRef);
-	return InterlockedIncrement(&g_cDllRef);
+	return InterlockedIncrement(&m_ref);
 }
 
 ULONG __stdcall ClassFactory::Release()
 {
+	//The factory is a static object (see DllGetClassObject): it is never deleted
 	int tmp = InterlockedDecrement(&m_ref);
-	if (tmp == 0)
-		delete this;
 	InterlockedDecrement(&g_cDllRef);
 	return tmp;
 }
@@ -230,6 +263,11 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppvOut)
 
 STDAPI DllCanUnloadNow(void)
 {
+	//The inline hooks and window subclasses installed by this module point into
+	//its own code, so it has to stay loaded once they are in place
+	if (m_isInitHook)
+		return S_FALSE;
+
 	return (g_cDllRef > 0) ? S_FALSE : S_OK;
 }
 
