@@ -50,23 +50,11 @@ std::wstring GetWindowClassName(HWND hWnd)
 
 std::wstring GetIniString(const std::wstring& FilePath, const std::wstring& AppName, const std::wstring& KeyName)
 {
-	if (FileIsExist(FilePath)) 
-	{
-		HANDLE pFile = CreateFileW(FilePath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-		LARGE_INTEGER fileSize;
-		GetFileSizeEx(pFile, &fileSize);
-
-		wchar_t* data = new wchar_t[fileSize.QuadPart];
-		ZeroMemory(data, sizeof(wchar_t) * fileSize.QuadPart);
-		GetPrivateProfileStringW(AppName.c_str(), KeyName.c_str(), nullptr, data, (DWORD)fileSize.QuadPart, FilePath.c_str());
-
-		std::wstring ret = data;
-		delete[] data;
-
-		CloseHandle(pFile);
-		return ret;
-	}
-	return {};
+	//The values in config.ini are short ("true", "255", ...), so a fixed buffer is enough.
+	//When the file or the key does not exist the result is an empty string.
+	wchar_t data[MAX_PATH] = { 0 };
+	GetPrivateProfileStringW(AppName.c_str(), KeyName.c_str(), L"", data, MAX_PATH, FilePath.c_str());
+	return data;
 }
 
 std::wstring ConvertTolower(std::wstring str)

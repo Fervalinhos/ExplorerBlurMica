@@ -788,7 +788,6 @@ namespace Hook
                     if (TreeView_GetBkColor(_iter.second.treeData.hWnd) != color)
                     {
                         TreeView_SetBkColor(_iter.second.treeData.hWnd, color);
-                        std::wcout << L"ref\n";
                     }
                 //}
                 return ret;

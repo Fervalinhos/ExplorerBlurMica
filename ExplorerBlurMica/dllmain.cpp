@@ -40,8 +40,9 @@ BOOL APIENTRY DllMain( HMODULE hModule,
         wchar_t pName[MAX_PATH];
         GetModuleFileNameW(NULL, pName, MAX_PATH);
         std::wstring path = std::wstring(pName);
-        std::wstring name = path.substr(path.length() - 12, 12);
-        if (ConvertTolower(name) == L"explorer.exe")
+        const std::wstring explorer = L"explorer.exe";
+        if (path.length() >= explorer.length()
+            && ConvertTolower(path.substr(path.length() - explorer.length())) == explorer)
             m_isLoaded = true;
     }
     else if (ul_reason_for_call == DLL_PROCESS_DETACH)
