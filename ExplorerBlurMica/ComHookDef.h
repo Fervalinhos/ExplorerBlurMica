@@ -1,4 +1,4 @@
-﻿/*
+/*
 * COM Hook定义
 *
 * Author: Maple

@@ -1,5 +1,5 @@
 /*
-* BHO×é¼ş¼ÓÔØÆ÷
+* BHOç»„ä»¶åŠ è½½å™¨
 *
 * Author: Maple
 * date: 2022-1-31 Create
@@ -21,7 +21,7 @@ extern void OnWindowLoad();
 extern void OnDocComplete(std::wstring, DWORD);
 
 /*
-* IDispatch ½Ó¿ÚÊµÏÖ ä¯ÀÀÆ÷ÊÂ¼ş
+* IDispatch æ¥å£å®ç° æµè§ˆå™¨äº‹ä»¶
 */
 class CIDispatch : public IDispatch
 {
@@ -46,7 +46,7 @@ protected:
 };
 
 /*
-* Ò»¸ö»ù±¾µÄCOMä¯ÀÀÆ÷Àà Ö»ÊµÏÖ»ù±¾½Ó¿Ú
+* ä¸€ä¸ªåŸºæœ¬çš„COMæµè§ˆå™¨ç±» åªå®ç°åŸºæœ¬æ¥å£
 */
 class CObjectWithSite : public IObjectWithSite
 {
@@ -72,7 +72,7 @@ protected:
 };
 
 /*
-* Àà¹¤³§ ÓÃÀ´´¦Àíä¯ÀÀÆ÷ÀàµÄ´´½¨
+* ç±»å·¥å‚ ç”¨æ¥å¤„ç†æµè§ˆå™¨ç±»çš„åˆ›å»º
 */
 class ClassFactory : public IClassFactory
 {
