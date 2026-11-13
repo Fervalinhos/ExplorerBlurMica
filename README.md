@@ -6,6 +6,64 @@ Add background Blur effect or Acrylic or Mica effect to explorer for win10 and w
 | [中文](/README_ZH.md) | [English](/README.md) |
 This project uses [LGNU V3 license](/COPYING.LESSER).
 
+> [!IMPORTANT]
+> **This repository is a fork.** The original project is
+> [Maplespe/ExplorerBlurMica](https://github.com/Maplespe/ExplorerBlurMica), created and maintained by
+> **Maplespe**. All credit for ExplorerBlurMica belongs to the original author. This fork is not affiliated
+> with or endorsed by them.
+
+## About this fork
+
+* **Base:** tag `1.0.7` of the original project (August 2023). It is the last version whose complete source
+  code was published; from 2.0.0 on, the original repository only contains header files, so the 2.x
+  versions cannot be built from it.
+* **What is missing compared to the original 2.x:** everything introduced after 1.0.7, including support
+  for the WinUI toolbars of Windows 11 23H2 and later, the FolderExtension loading method and the MicaAlt
+  effect. The rest of this README describes 1.0.7.
+* **Status:** the changes listed below build cleanly (Release and Debug, x64, zero warnings) but have
+  **not been tested at runtime inside File Explorer yet**. If you want a tested build, use the
+  [official releases](https://github.com/Maplespe/ExplorerBlurMica/releases) of the original project.
+* **License:** GNU LGPL v3, the same as the original. `LICENSE`, `COPYING.LESSER` and the copyright
+  notices in the source files are unchanged.
+
+### Changes made in this fork
+
+Modified on 2026-11-13, on top of the original 1.0.7:
+
+* **Build**
+  * The project uses the `v145` platform toolset (Visual Studio 2026 Build Tools).
+  * All source files are UTF-8 (two of them were GBK) and are compiled with `/utf-8`.
+  * All compiler warnings were fixed.
+* **Memory**
+  * Fixed a leak in `GetWindowClassName` and `GetWindowTitle`, which ran for every window created
+    inside `explorer.exe`.
+* **Thread safety**
+  * The per-thread maps used by the hooks were accessed without proper locking; they now are.
+  * The re-entrancy guard of the `PatBlt` hook no longer uses an unsynchronized shared map.
+* **Drawing**
+  * `PaintScroll` returned an undefined value for scroll bar parts it does not draw.
+  * The `DrawTextW` hook returned an error code instead of the text height.
+  * The `DrawTextW` hook falls back to the original function if the alpha-aware path fails.
+  * The `ExtTextOutW` hook read the text past its length when it was not null-terminated.
+* **COM / loading**
+  * `SetSite(NULL)` and sites without `IWebBrowser2` no longer dereference a null pointer.
+  * Fixed leaked COM references and the reference counting of the class factory.
+  * `DllCanUnloadNow` explicitly keeps the module loaded while its hooks are installed.
+  * `DllRegisterServer` wrote the component name to the registry with the wrong size.
+* **Configuration**
+  * `config.ini` is read with a single call per key and no longer fails when the file cannot be opened.
+  * Removed debug output from the Release build.
+
+### Building
+
+Requires the Visual Studio 2026 Build Tools (C++ workload, `v145` toolset) and a Windows 11 SDK.
+
+```
+msbuild ExplorerBlurMica.sln /p:Configuration=Release /p:Platform=x64
+```
+
+The DLL is written to `build\x64\Release`.
+
 ## Effects
 * Blur or Acrylic, Mica effects are available.
 * Custom blend colors are available.
