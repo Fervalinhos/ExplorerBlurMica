@@ -46,6 +46,8 @@ Modified on 2026-11-13, on top of the original 1.0.7:
   * The `DrawTextW` hook falls back to the original function if the alpha-aware path fails.
   * The `ExtTextOutW` hook read the text past its length when it was not null-terminated.
 * **COM / loading**
+  * The component has its own CLSID (`{A33BC6CB-090B-43AA-BA85-D027906E9989}`), as the original author asks
+    of modified versions, so it does not clash with an installation of the original.
   * `SetSite(NULL)` and sites without `IWebBrowser2` no longer dereference a null pointer.
   * Fixed leaked COM references and the reference counting of the class factory.
   * `DllCanUnloadNow` explicitly keeps the module loaded while its hooks are installed.

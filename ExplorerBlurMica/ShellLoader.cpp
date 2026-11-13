@@ -14,8 +14,9 @@ long g_cDllRef = 0;
 extern bool m_isInitHook;
 
 /*如果您修改了代码 请使用VS的GUID工具生成新的GUID！*/
-const std::wstring CLSID_SHELL_BHO_STR = L"{B44BD3C8-E597-4E08-AE43-246CE24698E7}";
-const CLSID CLSID_SHELL_BHO = { 0xb44bd3c8, 0xe597, 0x4e08, { 0xae, 0x43, 0x24, 0x6c, 0xe2, 0x46, 0x98, 0xe7 } };
+//This fork uses its own GUID, as requested above. The original 1.0.7 uses {B44BD3C8-E597-4E08-AE43-246CE24698E7}.
+const std::wstring CLSID_SHELL_BHO_STR = L"{A33BC6CB-090B-43AA-BA85-D027906E9989}";
+const CLSID CLSID_SHELL_BHO = { 0xa33bc6cb, 0x090b, 0x43aa, { 0xba, 0x85, 0xd0, 0x27, 0x90, 0x6e, 0x99, 0x89 } };
 
 #pragma region IDispatch
 
@@ -283,7 +284,7 @@ STDAPI DllRegisterServer()
 		return SELFREG_E_CLASS;
 
 	//设置COM组件名称
-	const wchar_t comName[] = L"ExplorerBlurMica BHO";
+	const wchar_t comName[] = L"ExplorerBlurMica BHO (Fervalinhos fork)";
 	RegSetValueExW(hkey, NULL, 0, REG_SZ, (const BYTE*)comName, sizeof(comName));
 	RegCloseKey(hkey);
 
