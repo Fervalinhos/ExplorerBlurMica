@@ -410,8 +410,10 @@ HRESULT DrawTextWithGlow
 	if (hModuele)
 	{
 		static function pfun = (function)GetProcAddress(hModuele, MAKEINTRESOURCEA(126));
-		return pfun(hdcMem, pszText, cch, prc, dwFlags, crText, crGlow, nGlowRadius,
-			nGlowIntensity, fPreMultiply, pfnDrawTextCallback, lParam);
+		//Undocumented export: it may not exist on every Windows build
+		if (pfun)
+			return pfun(hdcMem, pszText, cch, prc, dwFlags, crText, crGlow, nGlowRadius,
+				nGlowIntensity, fPreMultiply, pfnDrawTextCallback, lParam);
 	}
 	return E_NOTIMPL;
 }
@@ -423,7 +425,9 @@ HRESULT DwmUpdateAccentBlurRect(HWND hWnd, RECT* prc)
 	if(hModule)
 	{
 		static function pfun = (function)GetProcAddress(hModule, MAKEINTRESOURCEA(159));
-		return pfun(hWnd, prc);
+		//Undocumented export: it may not exist on every Windows build
+		if (pfun)
+			return pfun(hWnd, prc);
 	}
 	return E_NOTIMPL;
 }

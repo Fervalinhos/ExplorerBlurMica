@@ -888,6 +888,12 @@ namespace Hook
         if (format & DT_CALCRECT || m_drawtextState.find(GetCurrentThreadId()) != m_drawtextState.end())
             return _DrawTextW_.Org(hdc, lpchText, cchText, lprc, format);
 
+        //DrawTextW returns the height of the text, and callers rely on it. That value
+        //only exists inside the callback below, where the real DrawTextW runs, so it
+        //is carried out of there through this variable.
+        thread_local int textHeight = 0;
+        textHeight = 0;
+
         HRESULT hr = S_OK;
 
         auto fun = [&](HDC hDC)
@@ -896,17 +902,19 @@ namespace Hook
                 GetTextColor(hdc), 0, 0, 0, 0,
                 [](HDC hdc, LPWSTR lpchText, int cchText, LPRECT lprc, UINT format, LPARAM lParam)
                 {
-                    return _DrawTextW_.Org(hdc, lpchText, cchText, lprc, format);
+                    textHeight = _DrawTextW_.Org(hdc, lpchText, cchText, lprc, format);
+                    return textHeight;
                 },
                 0);
 
         };
-        if (!AlphaBuffer(hdc, lprc, fun))
+        //If the alpha-aware path is not available, draw the text the normal way
+        if (!AlphaBuffer(hdc, lprc, fun) || FAILED(hr))
         {
-            hr = _DrawTextW_.Org(hdc, lpchText, cchText, lprc, format);
+            return _DrawTextW_.Org(hdc, lpchText, cchText, lprc, format);
         }
 
-        return hr;
+        return textHeight;
     }
 
     //修复DrawTextExW的Alpha
@@ -929,13 +937,13 @@ namespace Hook
     //修复ExtTextOutW的Alpha
     BOOL MyExtTextOutW(HDC hdc, int x, int y, UINT option, const RECT* lprect, LPCWSTR lpString, UINT c, const INT* lpDx)
     {
-        std::wstring str;
-        if (lpString) str = lpString;
+        //lpString is not required to be null-terminated: its length is given by c
+        const bool hasText = lpString && c > 0 && lpString[0] != L'\0';
 
         thread_local bool isCurThread = false;
 
         if (!IsExcludePath() && !(CheckCaller(L"msctf.dll")) && !(option & ETO_GLYPH_INDEX) && !(option & ETO_IGNORELANGUAGE)
-            && !isCurThread && !str.empty() && m_drawtextState.find(GetCurrentThreadId()) == m_drawtextState.end())
+            && !isCurThread && hasText && m_drawtextState.find(GetCurrentThreadId()) == m_drawtextState.end())
         {
             isCurThread = true;
 
