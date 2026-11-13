@@ -34,16 +34,18 @@ bool FileIsExist(std::wstring FilePath)
 std::wstring GetWindowTitle(HWND hWnd)
 {
 	int size = GetWindowTextLengthW(hWnd) + 1;
-	wchar_t* pText = new wchar_t[size];
-	GetWindowTextW(hWnd, pText, size);
-	return pText;
+	std::wstring text(size, L'\0');
+	int length = GetWindowTextW(hWnd, &text[0], size);
+	text.resize(length > 0 ? length : 0);
+	return text;
 }
 
 std::wstring GetWindowClassName(HWND hWnd)
 {
-	wchar_t* pText = new wchar_t[MAX_PATH];
-	GetClassNameW(hWnd, pText, MAX_PATH);
-	return pText;
+	//The maximum length of a window class name is 256 characters
+	wchar_t text[MAX_PATH] = { 0 };
+	GetClassNameW(hWnd, text, MAX_PATH);
+	return text;
 }
 
 std::wstring GetIniString(const std::wstring& FilePath, const std::wstring& AppName, const std::wstring& KeyName)
