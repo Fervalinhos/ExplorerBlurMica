@@ -56,6 +56,8 @@ Modified on 2026-11-13, on top of the original 1.0.7:
   * On Windows 11 build 22621 and later, Mica (`effect=2`) is applied with the documented
     `DWMWA_SYSTEMBACKDROP_TYPE` attribute instead of an undocumented one.
   * New `effect=4`: Mica Alt.
+  * On Windows 11 22H2 and later, the effect is applied again when a window is restored from the
+    minimized state.
 * **Configuration**
   * `config.ini` is read with a single call per key and no longer fails when the file cannot be opened.
   * Removed debug output from the Release build.

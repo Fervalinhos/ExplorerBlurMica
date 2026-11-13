@@ -377,6 +377,9 @@ namespace Hook
             StartAero(hWnd, m_config.effType, m_config.blendColor, isBlend);
     }
 
+    //Window property that marks an Explorer window as currently minimized
+    static const wchar_t* const kMinimizedProp = L"ExplorerBlurMica.Minimized";
+
     //窗口子类化
     LRESULT WINAPI MyWndSubProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
     {
@@ -386,6 +389,21 @@ namespace Hook
             {
             case WM_SIZE:
             {
+                if (wparam == SIZE_MINIMIZED)
+                {
+                    SetPropW(hWnd, kMinimizedProp, (HANDLE)1);
+                }
+                else if ((wparam == SIZE_RESTORED || wparam == SIZE_MAXIMIZED) && GetPropW(hWnd, kMinimizedProp))
+                {
+                    //Back from the minimized state: the backdrop may have been dropped
+                    //while the window was minimized, so apply the whole effect again
+                    //(SetWindowBlur also extends the frame, like OnWindowSize below)
+                    RemovePropW(hWnd, kMinimizedProp);
+                    auto ret = DefSubclassProc(hWnd, message, wparam, lparam);
+                    SetWindowBlur(hWnd);
+                    return ret;
+                }
+
                 int height = HIWORD(lparam);
                 OnWindowSize(hWnd, height);
             }
@@ -497,6 +515,11 @@ namespace Hook
             GetWindowRect(hWnd, &pRect);
             OnWindowSize(hWnd, pRect.bottom - pRect.top);
             return ret;
+        }
+        else if (message == WM_NCDESTROY)
+        {
+            //Window properties have to be removed before the window is destroyed
+            RemovePropW(hWnd, kMinimizedProp);
         }
         return DefSubclassProc(hWnd, message, wparam, lparam);
     }
