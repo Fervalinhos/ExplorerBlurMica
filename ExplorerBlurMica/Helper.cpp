@@ -221,8 +221,8 @@ UINT CalcRibbonHeightForDPI(HWND hWnd, UINT src, bool normal, bool offsets)
 	float scale = MsoScaleForWindowDPI(hWnd);
 	if (scale != 1.f) {
 		if (!normal) {
-			float offset = round(1.5f * scale);
-			float height = round((float)src * scale);
+			float offset = roundf(1.5f * scale);
+			float height = roundf((float)src * scale);
 			if (offsets)
 				height -= offset;
 			else if (scale == 2.f)
@@ -347,7 +347,7 @@ void RefreshWin10BlurFrame(bool blurType)
 				HKEY hKey = nullptr;
 				LSTATUS ret = RegOpenKeyExW(HKEY_CURRENT_USER, L"Control Panel\\Desktop\\WindowMetrics", 0, KEY_WRITE, &hKey);
 				if (ret == ERROR_SUCCESS) {
-					RegSetValueExW(hKey, L"PaddedBorderWidth", NULL, REG_SZ, (LPBYTE)value.c_str(), sizeof(wchar_t) * value.length());
+					RegSetValueExW(hKey, L"PaddedBorderWidth", NULL, REG_SZ, (LPBYTE)value.c_str(), (DWORD)(sizeof(wchar_t) * (value.length() + 1)));
 					RegCloseKey(hKey);
 
 					NONCLIENTMETRICS metrics = { 0 };

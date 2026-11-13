@@ -952,7 +952,7 @@ namespace Hook
                     SetTextCharacterExtra(hDC, lpDx[0]);
 
                     RECT batchRc = rc;
-                    for (int i = 0; i < c; i++)
+                    for (UINT i = 0; i < c; i++)
                     {
                         if (i != 0) 
                         {
