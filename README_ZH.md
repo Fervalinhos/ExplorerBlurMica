@@ -174,7 +174,7 @@ cmd: `regsvr32 /u "你的路径/ExplorerBlurMica.dll"`
 ## 配置文件
 ``` ini
 [config]
-#效果类型: 0=Blur 1=Acrylic 2=Mica 3=Blur(Clear)
+#效果类型: 0=Blur 1=Acrylic 2=Mica 3=Blur(Clear) 4=MicaAlt
 #Blur仅在win11 22H2之前版本可用; Blur(Clear)在win10和win11都可用; Mica仅限win11可用
 effect=1
 #这是为了解决Windows 10下的模糊效果会使窗口的阴影也变得模糊的问题。

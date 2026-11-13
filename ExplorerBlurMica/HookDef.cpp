@@ -166,12 +166,17 @@ void RefreshConfig()
 
     //效果类型
     m_config.effType = _wtoi(cfg.c_str());
-    if (m_config.effType < 0 || m_config.effType > 3)
+    if (m_config.effType < 0 || m_config.effType > 4)
         m_config.effType = 0;
 
     //22000以后不支持Blur效果
     if (m_config.effType == 0 && g_sysBuildNumber > 22000)
         m_config.effType = 1;
+
+    //Mica Alt (4) needs DWMWA_SYSTEMBACKDROP_TYPE, available from Windows 11 build 22621:
+    //fall back to plain Mica on older systems
+    if (m_config.effType == 4 && g_sysBuildNumber < 22621)
+        m_config.effType = 2;
 
     m_config.blendColor = GetColorCfg(SysIsLightMode());
     m_config.smallborder = GetIniString(path, L"config", L"smallBorder") == L"true" ? true : false;
@@ -323,6 +328,13 @@ namespace Hook
                         DWM_SYSTEMBACKDROP_TYPE type1 = DWMSBT_TRANSIENTWINDOW;
                         DwmSetWindowAttribute(hWnd, DWMWA_SYSTEMBACKDROP_TYPE, &type1, sizeof(type1));
                     }
+                }
+                else if (g_sysBuildNumber >= 22621)
+                {
+                    //Documented system backdrop (Windows 11 build 22621 and later):
+                    //effect=2 -> Mica, effect=4 -> Mica Alt
+                    DWM_SYSTEMBACKDROP_TYPE backdrop = m_config.effType == 4 ? DWMSBT_TABBEDWINDOW : DWMSBT_MAINWINDOW;
+                    DwmSetWindowAttribute(hWnd, DWMWA_SYSTEMBACKDROP_TYPE, &backdrop, sizeof(backdrop));
                 }
                 else
                 {

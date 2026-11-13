@@ -18,8 +18,8 @@ This project uses [LGNU V3 license](/COPYING.LESSER).
   code was published; from 2.0.0 on, the original repository only contains header files, so the 2.x
   versions cannot be built from it.
 * **What is missing compared to the original 2.x:** everything introduced after 1.0.7, including support
-  for the WinUI toolbars of Windows 11 23H2 and later, the FolderExtension loading method and the MicaAlt
-  effect. The rest of this README describes 1.0.7.
+  for the WinUI toolbars of Windows 11 23H2 and later and the FolderExtension loading method. The rest of
+  this README describes 1.0.7.
 * **Status:** the changes listed below build cleanly (Release and Debug, x64, zero warnings) but have
   **not been tested at runtime inside File Explorer yet**. If you want a tested build, use the
   [official releases](https://github.com/Maplespe/ExplorerBlurMica/releases) of the original project.
@@ -52,6 +52,10 @@ Modified on 2026-11-13, on top of the original 1.0.7:
   * Fixed leaked COM references and the reference counting of the class factory.
   * `DllCanUnloadNow` explicitly keeps the module loaded while its hooks are installed.
   * `DllRegisterServer` wrote the component name to the registry with the wrong size.
+* **Effects**
+  * On Windows 11 build 22621 and later, Mica (`effect=2`) is applied with the documented
+    `DWMWA_SYSTEMBACKDROP_TYPE` attribute instead of an undocumented one.
+  * New `effect=4`: Mica Alt.
 * **Configuration**
   * `config.ini` is read with a single call per key and no longer fails when the file cannot be opened.
   * Removed debug output from the Release build.
@@ -235,8 +239,9 @@ Note: If something happens that crashes Explorer, press and hold the `ESC` key t
 ## Config
 ``` ini
 [config]
-#Effect type 0=Blur 1=Acrylic 2=Mica 3=Blur(Clear)
+#Effect type 0=Blur 1=Acrylic 2=Mica 3=Blur(Clear) 4=MicaAlt
 #Blur is only available until win11 22h2, Blur (Clear) is available in both win10 and win11, Mica is win11 only.
+#MicaAlt needs win11 22h2 (build 22621) or later; on older systems it falls back to Mica.
 effect=1
 #This is to solve the problem that Blur effect under Windows 10 will make the window shadow also be blurred.
 #If you use the Blur effect you can set it to true to alleviate this.
