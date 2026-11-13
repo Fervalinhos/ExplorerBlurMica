@@ -1164,6 +1164,8 @@ namespace Hook
             draw.ResetClip();
             return true;
         }
+        //Not handled here: let the caller fall back to the original theme drawing
+        return false;
     }
 
     HRESULT MyDrawThemeBackground(HTHEME  hTheme,
