@@ -283,7 +283,8 @@ STDAPI DllRegisterServer()
 		return SELFREG_E_CLASS;
 
 	//设置COM组件名称
-	RegSetValueExW(hkey, NULL, 0, REG_SZ, (const BYTE*)L"ExplorerBlurMica BHO", 24 * sizeof(TCHAR));
+	const wchar_t comName[] = L"ExplorerBlurMica BHO";
+	RegSetValueExW(hkey, NULL, 0, REG_SZ, (const BYTE*)comName, sizeof(comName));
 	RegCloseKey(hkey);
 
 	//创建InProcServer32
