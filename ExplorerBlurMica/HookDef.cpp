@@ -59,47 +59,72 @@ template<typename T, typename T1>
 class hashMap
 {
 public:
+    /*
+    * Every operation that touches the structure of the map takes the lock.
+    *
+    * Lookups hand out a pointer to the element instead of an iterator: an
+    * iterator is invalidated when another thread inserts and the table is
+    * rehashed, while pointers and references to the elements of a
+    * std::unordered_map stay valid until that element is erased.
+    *
+    * All the maps below are keyed by thread id and each thread only reads,
+    * writes and erases its own entry, so the element itself needs no lock.
+    */
+    using value_type = typename std::unordered_map<T, T1>::value_type;
+
     hashMap() = default;
 
-    auto find(T _name)
+    //Returns a pointer to the entry, or end() (nullptr) when it does not exist
+    value_type* find(const T& _name)
     {
         std::unique_lock<std::mutex> lock(m_mutex);
-        return m_map.find(_name);
+        auto it = m_map.find(_name);
+        return it == m_map.end() ? nullptr : &*it;
+    }
+
+    void erase(const T& _name)
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        m_map.erase(_name);
+    }
+
+    void erase(value_type* _it)
+    {
+        if (_it)
+        {
+            //Copy the key: it lives inside the element that is about to be destroyed
+            const T key = _it->first;
+            erase(key);
+        }
     }
 
     template <typename Args>
-    auto erase(Args&& _it)
+    void insert(Args&& _value)
     {
         std::unique_lock<std::mutex> lock(m_mutex);
-        return m_map.erase(_it);
+        m_map.insert(std::forward<Args>(_value));
     }
 
-    template <typename Args>
-    auto insert(Args&& _value)
+    T1& operator[](const T& _value)
     {
         std::unique_lock<std::mutex> lock(m_mutex);
-        return m_map.insert(_value);
-    }
-
-    auto& operator[](const T& _value)
-    {
         return m_map[_value];
     }
 
-    auto clear()
+    void clear()
     {
         std::unique_lock<std::mutex> lock(m_mutex);
         m_map.clear();
     }
 
-    auto end()
+    value_type* end()
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return m_map.end();
+        return nullptr;
     }
 
-    auto size()
+    size_t size()
     {
+        std::unique_lock<std::mutex> lock(m_mutex);
         return m_map.size();
     }
 
@@ -797,13 +822,13 @@ namespace Hook
         if (!IsExcludePath() && rop == PATCOPY)
         {
             //检测调用线程
-            static std::unordered_map<DWORD, bool> thList;
+            //Re-entrancy guard for the current thread (GDI+ may call PatBlt while we draw below)
+            thread_local bool isCurThread = false;
 
-            DWORD curThread = GetCurrentThreadId();
-            if (thList.find(curThread) != thList.end())
+            if (isCurThread)
                 return _PatBlt_.Org(hdc, x, y, w, h, rop);
 
-            thList.insert(std::make_pair(curThread, true));
+            isCurThread = true;
             //获取DC颜色画刷
             HBRUSH hbr = (HBRUSH)SelectObject(hdc, GetSysColorBrush(COLOR_WINDOW));
             LOGBRUSH lbr;
@@ -821,7 +846,7 @@ namespace Hook
             //设置回原画刷
             SelectObject(hdc, hbr);
 
-            thList.erase(curThread);
+            isCurThread = false;
             return TRUE;
         }
         return _PatBlt_.Org(hdc, x, y, w, h, rop);
